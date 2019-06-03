@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'provinces.dart';
 import 'parties.dart';
-
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
@@ -24,7 +23,7 @@ class MyAppScaffold extends StatefulWidget {
 class MyAppScaffoldState extends State<MyAppScaffold> {
   List<List> routes = [
     ['Constituency Wise', ProvincesRoute()],
-    ['Party Wise', PartiesRoute()]
+    ['Party Wise', PartiesRoute()],
   ];
   int activeRouteIndex = 0;
 
@@ -54,24 +53,26 @@ class MyAppScaffoldState extends State<MyAppScaffold> {
               ),
               Column(
                   children: routes.map((route) {
-
-               return  Ink(
+                return Ink(
                   child: ListTile(
                     title: Text(
                       route[0],
-                      style: TextStyle(color: activeRouteIndex==routes.indexOf(route)?Colors.white:Colors.black),
+                      style: TextStyle(
+                          color: activeRouteIndex == routes.indexOf(route)
+                              ? Colors.white
+                              : Colors.black),
                     ),
                     onTap: () {
-                      
                       setState(() {
-                        
                         Navigator.of(context).pop();
                         activeRouteIndex = routes.indexOf(route);
                         print(activeRouteIndex);
-                      }); 
+                      });
                     },
                   ),
-                  color:  activeRouteIndex==routes.indexOf(route)?Colors.lightBlue:Colors.white,
+                  color: activeRouteIndex == routes.indexOf(route)
+                      ? Colors.lightBlue
+                      : Colors.white,
                 );
               }).toList())
             ],
@@ -79,5 +80,7 @@ class MyAppScaffoldState extends State<MyAppScaffold> {
         )
         // This trailing comma makes auto-formatting nicer for build methods.
         );
+
+    
   }
 }

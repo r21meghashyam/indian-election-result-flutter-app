@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:indian_election_2019/candidates.dart';
-import 'dart:convert';
 import 'constituencies.dart';
-
+import 'package:http/http.dart' as http;
+import 'package:html/parser.dart' show parse;
 
 class ProvincesRoute extends StatefulWidget {
   ProvincesRoute();
@@ -13,22 +12,69 @@ class ProvincesRoute extends StatefulWidget {
 }
 
 class ProvincesRouteState extends State<ProvincesRoute> {
+  List<Card> displayProvinces(List<Province> provinces) {
+    return provinces
+        .map((province) => Card(
+            child: InkWell(
+              child: Container(
+                child: Row(children: [
+                  
+                  Container(child:Icon(Icons.account_balance,size: 50),alignment: Alignment.centerLeft,),
+                  Expanded(child:Container(child: Text(
+                    province.name,
+                    textAlign: TextAlign.left,
+                    style: TextStyle(fontSize: 17),
+                    
+                  ),alignment: Alignment.center,)
+                  ,),
+                  Text( province.id.startsWith("S")
+                          ? "State"
+                          : "Union Teritory", style: TextStyle(fontSize: 10)),
+                ]),
+                padding: EdgeInsets.all(20),
+                color: Color.fromRGBO(239, 240, 241, 1)
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          province.id.startsWith("S")
+                              ? ConstituencyRoute(province)
+                              : CandidatesRoute(Constituency(
+                                  constituencyId: "1",
+                                  constituencyName: province.name,
+                                  provinceId: province.id))),
+                );
+              },
+            ),
+            margin: EdgeInsets.only(top: 5, bottom: 5)))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<ProvinceList>(
-      
-        future: loadProvinceList(0),
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
+    return FutureBuilder<List<Province>>(
+      future: loadProvinceList(0),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return SingleChildScrollView(
+            child: Column(
+              children: displayProvinces(snapshot.data),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+            ),
+          );
+
+          /*
             return ListView.separated(
-              itemCount: snapshot.data.provinces.length,
+              itemCount: snapshot.data.length,
               itemBuilder: (BuildContext context, int index) {
                 return ListTile(
                   title: Text(
-                      '${snapshot.data.provinces[index].name.replaceAll("&amp;", "&")}'),
+                      '${snapshot.data[index].name.replaceAll("&amp;", "&")}'),
                   leading: Icon(Icons.account_balance),
                   trailing: Text(
-                      snapshot.data.provinces[index].id.startsWith("S")
+                      snapshot.data[index].id.startsWith("S")
                           ? "State"
                           : "Union Teritory"),
                   onTap: () {
@@ -36,15 +82,15 @@ class ProvincesRouteState extends State<ProvincesRoute> {
                       context,
                       MaterialPageRoute(
                           builder: (context) =>
-                              snapshot.data.provinces[index].id.startsWith("S")
+                              snapshot.data[index].id.startsWith("S")
                                   ? ConstituencyRoute(
-                                      snapshot.data.provinces[index])
+                                      snapshot.data[index])
                                   : CandidatesRoute(Constituency(
                                       constituencyId: "1",
                                       constituencyName:
-                                          snapshot.data.provinces[index].name,
+                                          snapshot.data[index].name,
                                       provinceId:
-                                          snapshot.data.provinces[index].id))),
+                                          snapshot.data[index].id))),
                     );
                   },
                 );
@@ -54,30 +100,13 @@ class ProvincesRouteState extends State<ProvincesRoute> {
                   Divider(color: Colors.grey),
             ); //snapshot.data.provinces.forEach((){
             //ListTile(title: Text("Hello"));
-            // }));
-          } else if (snapshot.hasError) {
-            return new Text("${snapshot.error}");
-          }
-          return Center(child: CircularProgressIndicator()); 
-        },
-      );
-  }
-}
-
-class ProvinceList {
-  final List<Province> provinces;
-
-  ProvinceList({
-    this.provinces,
-  });
-
-  factory ProvinceList.fromJson(List<dynamic> parsedJson) {
-    List<Province> provinces = new List<Province>();
-    provinces = parsedJson.map((i) => Province.fromJson(i)).toList();
-    provinces.sort((first, second) {
-      return first.name.compareTo(second.name);
-    });
-    return new ProvinceList(provinces: provinces);
+            // }));*/
+        } else if (snapshot.hasError) {
+          return new Text("${snapshot.error}");
+        }
+        return Center(child: CircularProgressIndicator());
+      },
+    );
   }
 }
 
@@ -95,13 +124,15 @@ class Province {
   }
 }
 
-Future<String> _loadAProvinceAsset() async {
-  return await rootBundle.loadString('assets/provinces.json');
-}
+Future<List<Province>> loadProvinceList(int i) async {
+  http.Response data = await http.get(
+      'http://results.eci.gov.in/pc/en/constituencywise/ConstituencywiseU011.htm');
+  var html = parse(data.body);
+  var options = html.getElementById("ddlState").getElementsByTagName("option");
+  options.removeAt(0); //select placeholder
+  List<Province> provinces = options.map((option) {
+    return Province(id: option.attributes['value'], name: option.text);
+  }).toList();
 
-Future<ProvinceList> loadProvinceList(int i) async {
-  String jsonString = await _loadAProvinceAsset();
-  final jsonResponse = json.decode(jsonString);
-
-  return new ProvinceList.fromJson(jsonResponse);
+  return provinces;
 }

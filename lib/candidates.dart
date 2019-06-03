@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'constituencies.dart';
-import 'package:flutter/services.dart' show rootBundle;
-import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'package:html/parser.dart' show parse;
 
 
 class CandidatesRoute extends StatefulWidget {
@@ -22,7 +22,8 @@ class CandidatesRouteState extends State<CandidatesRoute> {
 
   Card candidateCard(BuildContext context, Candidate candidate) {
     final formatter = new NumberFormat();
-    String total = formatter.format(candidate.total);
+    String total = formatter.format(int.parse(candidate.total));
+    
     return new Card(
         child: new Container(
       child: Column(
@@ -40,16 +41,15 @@ class CandidatesRouteState extends State<CandidatesRoute> {
 
   List<Widget> candidateList(BuildContext context, AsyncSnapshot snapshot) {
     List<Widget> candidates = new List();
-    print(snapshot.data.candidates.length);
-    CandidatesList candidateslist = snapshot.data;
+    List<Candidate> candidateslist = snapshot.data;
 
-    candidateslist.candidates.sort((first, second) {
+    candidateslist.sort((first, second) {
       if(sortByVotes)
-        return  second.total - first.total;
+        return  int.parse(second.total) - int.parse(first.total);
       else
-        return first.osn - second.osn;
+        return int.parse(first.osn) - int.parse(second.osn);
     });
-    candidateslist.candidates.forEach((candidate) {
+    candidateslist.forEach((candidate) {
       candidates.add(candidateCard(context, candidate));
     });
     return candidates;
@@ -57,15 +57,13 @@ class CandidatesRouteState extends State<CandidatesRoute> {
 
   @override
   Widget build(BuildContext context) {
-    print(constituency.constituencyName);
     return Scaffold(
         appBar: AppBar(
           title: Text(constituency.constituencyName),
         ),
-        body: FutureBuilder<CandidatesList>(
+        body: FutureBuilder<List<Candidate>>(
             future: loadCandidatesList(constituency),
             builder: (context, snapshot) {
-              print(snapshot.hasError);
               if (snapshot.hasData) {
                 return SingleChildScrollView(
                     child: Column(
@@ -87,7 +85,6 @@ class CandidatesRouteState extends State<CandidatesRoute> {
               } else if(snapshot.hasError) {
                 return Center(child:Text('${snapshot.error}'));
               }
-              print("No Error");
               return Center(child: CircularProgressIndicator()); 
               
             }),
@@ -96,7 +93,7 @@ class CandidatesRouteState extends State<CandidatesRoute> {
            
             setState(() {
                sortByVotes=!sortByVotes;
-            print(sortByVotes);
+                print(sortByVotes);
             });
           },
           tooltip: sortByVotes?'Sort by OSN':'Sort by votes',
@@ -107,12 +104,12 @@ class CandidatesRouteState extends State<CandidatesRoute> {
 }
 
 class Candidate {
-  final int osn;
+  final String osn;
   final String candidateName;
   final String party;
-  final int evmVotes;
-  final int postVotes;
-  final int total;
+  final String evmVotes;
+  final String postVotes;
+  final String total;
   final String voteShare;
 
   Candidate(
@@ -123,51 +120,34 @@ class Candidate {
       this.postVotes,
       this.total,
       this.voteShare});
-
-  factory Candidate.fromJson(Map<String, dynamic> json) {
-    return new Candidate(
-        osn: json['osn'],
-        candidateName: json['candidate_name'].toString(),
-        party: json['party_name'],
-        evmVotes: json['evm_votes'],
-        postVotes: json['post_votes'],
-        total: json['total_votes'],
-        voteShare: json['vote_share'].toString());
-  }
   
 }
 
-class CandidatesList {
-  List<Candidate> candidates = [];
 
-  CandidatesList({
-    this.candidates,
+Future<List<Candidate>> loadCandidatesList(Constituency constituency) async {
+   http.Response data =
+      await http.get('http://results.eci.gov.in/pc/en/constituencywise/Constituencywise${constituency.provinceId}${constituency.constituencyId}.htm?ac=${constituency.constituencyId}`');
+    
+  var html = parse(data.body);
+  var tableParty = html.getElementsByClassName("table-party")[0];
+  var trs = tableParty.getElementsByTagName("tr");
+  trs.removeRange(0, 3); //headings
+  trs.removeLast(); //All Party
+  trs.removeLast(); //total
+  var candidates = trs.map((tr) {
+    
+    return Candidate(
+      osn: tr.children[0].text,
+      candidateName: tr.children[1].text,
+      party: tr.children[2].text,
+      evmVotes: tr.children[3].text,
+      postVotes: tr.children[4].text,
+      total: tr.children[5].text,
+      voteShare: tr.children[6].text
+      );
   });
+  //return parties.toList();
 
-  factory CandidatesList.fromJson(
-      List<dynamic> parsedJson, Constituency constituency) {
-    List<Candidate> candidates = new List<Candidate>();
-    parsedJson.removeWhere((test) =>
-        test["province_id"].toString() != constituency.provinceId.toString());
-    parsedJson.removeWhere((test) =>
-        test["constituency_id"].toString() !=
-        constituency.constituencyId.toString());
-    candidates = parsedJson.map((i) => Candidate.fromJson(i)).toList();
-    
-    
-    candidates.sort((first, second) {
-      return first.osn - second.osn;
-    });
-    return new CandidatesList(candidates: candidates);
-  }
+  return candidates.toList();
 }
 
-Future<String> _loadAConstituencyAsset() async {
-  return await rootBundle.loadString('assets/candidates.json');
-}
-
-Future<CandidatesList> loadCandidatesList(Constituency constituency) async {
-  String jsonString = await _loadAConstituencyAsset();
-  dynamic jsonResponse = await json.decode(jsonString);
-  return new CandidatesList.fromJson(jsonResponse, constituency);
-}
