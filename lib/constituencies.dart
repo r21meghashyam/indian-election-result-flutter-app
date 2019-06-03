@@ -45,7 +45,7 @@ class ConstituencyRoute extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(province.name.replaceAll("&amp;", "&")),
+        title: Text(province.name.replaceAll("&amp;", "&"),style:TextStyle(color:Colors.white)),
       ),
       body: FutureBuilder<List<Constituency>>(
         future: loadConstituencyList(province),

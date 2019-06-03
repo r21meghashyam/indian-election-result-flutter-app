@@ -9,7 +9,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
         title: 'Indian Election 2019',
         theme: ThemeData(
-          primaryColor: Colors.brown,
+          primaryColor: Colors.orange,
         ),
         home: MyAppScaffold());
   }
@@ -30,11 +30,13 @@ class MyAppScaffoldState extends State<MyAppScaffold> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      
         appBar: AppBar(
-          title: Text("Indian Election 2019"),
+          title: Text("Indian Election 2019",style: TextStyle(color: Colors.white),),
         ),
         body: routes[activeRouteIndex][1],
         drawer: Drawer(
+          
           child: ListView(
             padding: EdgeInsets.zero,
             children: <Widget>[
@@ -48,7 +50,7 @@ class MyAppScaffoldState extends State<MyAppScaffold> {
                 margin: EdgeInsets.all(0.0),
                 padding: EdgeInsets.all(50.0),
                 decoration: BoxDecoration(
-                  color: Colors.brown,
+                  color: Colors.orange,
                 ),
               ),
               Column(
@@ -66,7 +68,6 @@ class MyAppScaffoldState extends State<MyAppScaffold> {
                       setState(() {
                         Navigator.of(context).pop();
                         activeRouteIndex = routes.indexOf(route);
-                        print(activeRouteIndex);
                       });
                     },
                   ),

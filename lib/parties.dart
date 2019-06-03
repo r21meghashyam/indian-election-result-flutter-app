@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' show parse;
+import 'parties_chart.dart';
 
 class PartiesRoute extends StatefulWidget {
   PartiesRoute();
@@ -27,11 +28,19 @@ List<Party> sortParties(List<Party> parties){
       body: FutureBuilder<List>(
           future: fetchParties(),
           builder: (context, snapshot) {
-            print(snapshot);
             if (snapshot.hasData)
               return SingleChildScrollView(
                   child: Column(
                 children: <Widget>[
+                    RaisedButton(child: Text('View Chart'),
+                    onPressed: (){
+                      Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>PartiesChartRoute()),
+                );
+                    },)
+                  ,
                   Ink(
                     child: Row(
                       children: <Widget>[

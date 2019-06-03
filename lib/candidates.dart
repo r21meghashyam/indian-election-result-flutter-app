@@ -59,7 +59,7 @@ class CandidatesRouteState extends State<CandidatesRoute> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text(constituency.constituencyName),
+          title: Text(constituency.constituencyName,style:TextStyle(color:Colors.white)),
         ),
         body: FutureBuilder<List<Candidate>>(
             future: loadCandidatesList(constituency),
@@ -93,7 +93,6 @@ class CandidatesRouteState extends State<CandidatesRoute> {
            
             setState(() {
                sortByVotes=!sortByVotes;
-                print(sortByVotes);
             });
           },
           tooltip: sortByVotes?'Sort by OSN':'Sort by votes',

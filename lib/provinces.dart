@@ -19,7 +19,7 @@ class ProvincesRouteState extends State<ProvincesRoute> {
               child: Container(
                 child: Row(children: [
                   
-                  Container(child:Icon(Icons.account_balance,size: 50),alignment: Alignment.centerLeft,),
+                  Container(child:Icon(Icons.account_balance,size: 50,color: Colors.grey,),alignment: Alignment.centerLeft,),
                   Expanded(child:Container(child: Text(
                     province.name,
                     textAlign: TextAlign.left,
@@ -62,6 +62,7 @@ class ProvincesRouteState extends State<ProvincesRoute> {
             child: Column(
               children: displayProvinces(snapshot.data),
               crossAxisAlignment: CrossAxisAlignment.stretch,
+              
             ),
           );
 
